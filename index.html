@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Медиа Плеер</title>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .player-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+        }
+
+        .player-title {
+            color: white;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+        }
+
+        .video-container {
+            width: 100%;
+            margin-bottom: 15px;
+            position: relative;
+            background: #000;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex: 1;
+            min-width: 100px;
+            font-size: clamp(14px, 3vw, 16px);
+            touch-action: manipulation;
+        }
+
+        button:active {
+            background: #45a049;
+            transform: scale(0.98);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            background: #2196F3;
+            color: white;
+            padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px);
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            transition: background 0.3s;
+            flex: 1;
+            text-align: center;
+            font-size: clamp(14px, 3vw, 16px);
+            touch-action: manipulation;
+        }
+
+        .file-label:active {
+            background: #1976D2;
+            transform: scale(0.98);
+        }
+
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .time-display {
+            color: white;
+            text-align: center;
+            font-size: clamp(12px, 2.5vw, 14px);
+            margin-bottom: 10px;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .volume-control input {
+            flex: 1;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .volume-control input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .volume-control input::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .supported-formats {
+            color: #888;
+            font-size: clamp(10px, 2vw, 12px);
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+            font-size: clamp(12px, 2.5vw, 14px);
+        }
+
+        .touch-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .touch-controls.visible {
+            opacity: 1;
+        }
+
+        .touch-play {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .player-container {
+                padding: 10px;
+            }
+
+            .controls {
+                gap: 5px;
+            }
+
+            button, .file-label {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+
+        @media (hover: hover) {
+            button:hover {
+                background: #45a049;
+            }
+
+            .file-label:hover {
+                background: #1976D2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <h1 class="player-title">Медиа Плеер</h1>
+        <div class="video-container">
+            <video id="videoPlayer" playsinline>
+                Ваш браузер не поддерживает видео элемент.
+            </video>
+            <div class="touch-controls" id="touchControls">
+                <div class="touch-play" id="touchPlay">▶️</div>
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="time-display">
+            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+        </div>
+        <div class="volume-control">
+            <span style="color: white;">🔊</span>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+        </div>
+        <div class="controls">
+            <button onclick="playVideo()">▶️ Воспроизвести</button>
+            <button onclick="pauseVideo()">⏸️ Пауза</button>
+            <button onclick="toggleFullscreen()">⛶ Полный экран</button>
+            <label class="file-label">
+                📁 Выбрать файл
+                <input type="file" id="fileInput" accept="video/*,audio/*,.mkv,.avi,.mov,.wmv,.flv,.webm,.m4v,.3gp" onchange="handleFileSelect(event)">
+            </label>
+        </div>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="supported-formats">
+            Поддерживаемые форматы: MP4, WebM, Ogg, MKV, AVI, MOV, WMV, FLV, M4V, 3GP
+        </div>
+    </div>
+
+    <script>
+        const videoPlayer = document.getElementById('videoPlayer');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('duration');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const errorMessage = document.getElementById('errorMessage');
+        const touchControls = document.getElementById('touchControls');
+        const touchPlay = document.getElementById('touchPlay');
+        let touchTimeout;
+
+        // Функции управления видео
+        function playVideo() {
+            videoPlayer.play().catch(err => {
+                showError('Ошибка воспроизведения');
+            });
+        }
+
+        function pauseVideo() {
+            videoPlayer.pause();
+        }
+
+        // Обработка перетаскивания файлов
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/') && !file.type.startsWith('audio/')) {
+                showError('Неподдерживаемый формат файла');
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            videoPlayer.load();
+            hideError();
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        // Обновление прогресса
+        videoPlayer.addEventListener('timeupdate', () => {
+            const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            progressBar.style.width = progress + '%';
+            
+            currentTimeDisplay.textContent = formatTime(videoPlayer.currentTime);
+            durationDisplay.textContent = formatTime(videoPlayer.duration);
+        });
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const minutes = Math.floor(seconds / 60);
+            seconds = Math.floor(seconds % 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Обработка прогресс-бара
+        let isDragging = false;
+
+        progressBar.parentElement.addEventListener('mousedown', startDragging);
+        progressBar.parentElement.addEventListener('touchstart', startDragging);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag);
+        document.addEventListener('mouseup', stopDragging);
+        document.addEventListener('touchend', stopDragging);
+
+        function startDragging(e) {
+            isDragging = true;
+            updateProgress(e);
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                updateProgress(e);
+            }
+        }
+
+        function stopDragging() {
+            isDragging = false;
+        }
+
+        function updateProgress(e) {
+            const rect = progressBar.parentElement.getBoundingClientRect();
+            const pos = ((e.clientX || e.touches[0].clientX) - rect.left) / rect.width;
+            videoPlayer.currentTime = pos * videoPlayer.duration;
+        }
+
+        // Управление громкостью
+        volumeSlider.addEventListener('input', (e) => {
+            videoPlayer.volume = e.target.value;
+        });
+
+        // Полноэкранный режим
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                if (videoPlayer.requestFullscreen) {
+                    videoPlayer.requestFullscreen();
+                } else if (videoPlayer.webkitRequestFullscreen) {
+                    videoPlayer.webkitRequestFullscreen();
+                } else if (videoPlayer.mozRequestFullScreen) {
+                    videoPlayer.mozRequestFullScreen();
+                } else if (videoPlayer.msRequestFullscreen) {
+                    videoPlayer.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        // Сенсорное управление
+        videoPlayer.addEventListener('touchstart', () => {
+            touchControls.classList.add('visible');
+            clearTimeout(touchTimeout);
+            touchTimeout = setTimeout(() => {
+                touchControls.classList.remove('visible');
+            }, 3000);
+        });
+
+        touchPlay.addEventListener('click', () => {
+            if (videoPlayer.paused) {
+                playVideo();
+            } else {
+                pauseVideo();
+            }
+        });
+
+        // Обработка ошибок
+        videoPlayer.addEventListener('error', () => {
+            showError('Ошибка воспроизведения файла');
+        });
+
+        // Автоматическое скрытие элементов управления на мобильных устройствах
+        let controlsTimeout;
+        videoPlayer.addEventListener('play', () => {
+            clearTimeout(controlsTimeout);
+            controlsTimeout = setTimeout(() => {
+                if (!videoPlayer.paused) {
+                    touchControls.classList.remove('visible');
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html> 
